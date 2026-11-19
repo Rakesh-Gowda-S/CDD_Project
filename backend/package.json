@@ -1,0 +1,30 @@
+{
+  "name": "campus-lost-found-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "check": "node --check src/index.js && node --check src/lib/prisma.js && node --check src/lib/images.js && node --check src/lib/admin-activity.js && node --check src/lib/csv.js && node --check src/middleware/auth.js && node --check src/middleware/upload.js && node --check src/routes/auth.js && node --check src/routes/admin.js && node --check src/routes/admin-catalog.js && node --check src/routes/admin-operations.js && node --check src/routes/admin-reports.js && node --check src/routes/catalog.js && node --check src/routes/listings.js && node --check src/routes/messages.js && node --check prisma/seed.js && node --check prisma/create-admin.js && node --check prisma/migrate-roles.js && node --check prisma/migrate-approval.js && node --check prisma/migrate-admin-tools.js",
+    "seed": "node prisma/seed.js",
+    "migrate:roles": "node prisma/migrate-roles.js",
+    "migrate:approval": "node prisma/migrate-approval.js",
+    "migrate:admin-tools": "node prisma/migrate-admin-tools.js",
+    "create-admin": "node prisma/create-admin.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.0"
+  }
+}

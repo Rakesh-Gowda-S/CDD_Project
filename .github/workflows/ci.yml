@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+      - name: Install server dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Validate database schema
+        working-directory: backend
+        run: npx prisma validate
+        env:
+          DATABASE_URL: mongodb://ci:ci@localhost:27017/campus?authSource=admin&replicaSet=rs0
+      - name: Check server JavaScript
+        working-directory: backend
+        run: npm run check
+      - name: Install client dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Build client
+        working-directory: frontend
+        run: npm run build

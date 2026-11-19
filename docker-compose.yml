@@ -1,0 +1,81 @@
+services:
+  db:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-campus_user}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?Set MONGO_INITDB_ROOT_PASSWORD in .env}
+      MONGO_REPLICA_KEY: ${MONGO_REPLICA_KEY:?Set MONGO_REPLICA_KEY in .env}
+    entrypoint: ["/bin/bash", "/usr/local/bin/start-mongo.sh"]
+    volumes:
+      - ./backend/scripts/start-mongo.sh:/usr/local/bin/start-mongo.sh:ro
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok\" localhost:27017/admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mongo-init:
+    image: mongo:8.0
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-campus_user}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?Set MONGO_INITDB_ROOT_PASSWORD in .env}
+    entrypoint: ["mongosh"]
+    command:
+      - --host
+      - db
+      - --username
+      - ${MONGO_INITDB_ROOT_USERNAME:-campus_user}
+      - --password
+      - ${MONGO_INITDB_ROOT_PASSWORD:?Set MONGO_INITDB_ROOT_PASSWORD in .env}
+      - --authenticationDatabase
+      - admin
+      - --quiet
+      - --eval
+      - |
+        try {
+          if (rs.status().myState === 1) quit(0);
+        } catch (error) {}
+        try {
+          rs.initiate({_id: "rs0", members: [{_id: 0, host: "db:27017"}]});
+        } catch (error) {
+          print(error);
+        }
+        for (let attempt = 0; attempt < 30; attempt++) {
+          try {
+            if (rs.status().myState === 1) quit(0);
+          } catch (error) {}
+          sleep(1000);
+        }
+        quit(1);
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mongodb://${MONGO_INITDB_ROOT_USERNAME:-campus_user}:${MONGO_INITDB_ROOT_PASSWORD}@db:27017/${MONGO_DATABASE:-campus_lost_found}?authSource=admin&replicaSet=rs0
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      CLIENT_ORIGIN: http://localhost:3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads_data:/app/backend/uploads
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+    command: sh -c "npx prisma db push && npm run migrate:roles && npm run migrate:approval && npm run migrate:admin-tools && npm run seed && npm start"
+
+volumes:
+  mongodb_data:
+  uploads_data:
