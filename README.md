@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # LostLInk — Campus Lost & Found Portal
 
 A student-focused portal for reporting lost belongings, posting found items, browsing campus listings, and sending private contact requests.
