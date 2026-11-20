@@ -10,7 +10,7 @@ import adminReportsRouter from './admin-reports.js'
 const router = Router()
 
 router.param('id', (req, res, next, id) => {
-  if (!/^[a-f\d]{24}$/i.test(id)) {
+  if (!/^c[a-z\d]{24}$/i.test(id)) {
     return res.status(400).json({ error: 'Choose a valid record.' })
   }
   return next()

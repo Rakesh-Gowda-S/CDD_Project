@@ -9,8 +9,33 @@ dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)),
 
 const prisma = new PrismaClient()
 const demoEmail = 'demo.student@campus.example'
+const defaultCategories = [
+  { key: 'ID_CARD', name: 'ID cards' },
+  { key: 'BOOKS', name: 'Books' },
+  { key: 'ELECTRONICS', name: 'Electronics' },
+  { key: 'KEYS', name: 'Keys' },
+  { key: 'CLOTHING', name: 'Clothing' },
+  { key: 'ACCESSORIES', name: 'Accessories' },
+  { key: 'OTHER', name: 'Other' },
+]
+const defaultLocations = ['Library', 'Student Center', 'Science Building', 'Cafeteria']
 
 async function main() {
+  for (const category of defaultCategories) {
+    await prisma.listingCategory.upsert({
+      where: { key: category.key },
+      update: {},
+      create: category,
+    })
+  }
+  for (const name of defaultLocations) {
+    await prisma.campusLocation.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    })
+  }
+
   const settings = await prisma.portalSettings.upsert({
     where: { key: 'portal' },
     update: {},

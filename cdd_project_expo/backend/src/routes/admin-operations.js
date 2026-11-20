@@ -7,7 +7,7 @@ import { toCsv } from '../lib/csv.js'
 
 const router = Router()
 router.param('id', (req, res, next, id) => {
-  if (!/^[a-f\d]{24}$/i.test(id)) return res.status(400).json({ error: 'Choose a valid record.' })
+  if (!/^c[a-z\d]{24}$/i.test(id)) return res.status(400).json({ error: 'Choose a valid record.' })
   return next()
 })
 const listingFields = {
@@ -29,7 +29,7 @@ const expirySchema = z.object({
   expiresAt: z.string().date(),
 })
 const bulkSchema = z.object({
-  ids: z.array(z.string().regex(/^[a-f\d]{24}$/i)).min(1).max(100).refine((ids) => new Set(ids).size === ids.length),
+  ids: z.array(z.string().regex(/^c[a-z\d]{24}$/i)).min(1).max(100).refine((ids) => new Set(ids).size === ids.length),
   action: z.enum(['ARCHIVE', 'REMOVE']),
 })
 

@@ -5,7 +5,7 @@ import { recordAdminActivity } from '../lib/admin-activity.js'
 
 const router = Router()
 router.param('id', (req, res, next, id) => {
-  if (!/^[a-f\d]{24}$/i.test(id)) return res.status(400).json({ error: 'Choose a valid record.' })
+  if (!/^c[a-z\d]{24}$/i.test(id)) return res.status(400).json({ error: 'Choose a valid record.' })
   return next()
 })
 const nameSchema = z.string().trim().min(2, 'Enter at least 2 characters.').max(60)

@@ -23,7 +23,7 @@ jobs:
         working-directory: backend
         run: npx prisma validate
         env:
-          DATABASE_URL: mongodb://ci:ci@localhost:27017/campus?authSource=admin&replicaSet=rs0
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/campus?schema=public
       - name: Check server JavaScript
         working-directory: backend
         run: npm run check

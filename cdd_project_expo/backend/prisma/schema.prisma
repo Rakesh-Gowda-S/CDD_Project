@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -43,14 +43,14 @@ enum ListingReportStatus {
 }
 
 model User {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  id           String        @id @default(cuid())
   name         String
   email        String        @unique
   passwordHash String
   role         UserRole      @default(STUDENT)
   approvalStatus ApprovalStatus @default(APPROVED)
   approvalDecidedAt DateTime?
-  approvalDecidedBy String?  @db.ObjectId
+  approvalDecidedBy String?
   accountStatus UserAccountStatus @default(ACTIVE)
   listings     Listing[]
   messages     Message[]
@@ -60,7 +60,7 @@ model User {
 }
 
 model Listing {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  id           String        @id @default(cuid())
   title        String
   description  String
   status       ListingStatus
@@ -71,7 +71,7 @@ model Listing {
   isResolved   Boolean       @default(false)
   expiresAt    DateTime?
   archivedAt   DateTime?
-  ownerId      String        @db.ObjectId
+  ownerId      String
   owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   messages     Message[]
   reports      ListingReport[]
@@ -83,7 +83,7 @@ model Listing {
 }
 
 model ListingCategory {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(cuid())
   key       String   @unique
   name      String   @unique
   isActive  Boolean  @default(true)
@@ -92,7 +92,7 @@ model ListingCategory {
 }
 
 model CampusLocation {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(cuid())
   name      String   @unique
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -100,14 +100,14 @@ model CampusLocation {
 }
 
 model ListingReport {
-  id              String              @id @default(auto()) @map("_id") @db.ObjectId
-  listingId       String              @db.ObjectId
-  reporterId      String              @db.ObjectId
+  id              String              @id @default(cuid())
+  listingId       String
+  reporterId      String
   reason          ListingReportReason
   details         String?
   status          ListingReportStatus @default(PENDING)
   reviewedAt      DateTime?
-  reviewedBy      String?             @db.ObjectId
+  reviewedBy      String?
   createdAt       DateTime            @default(now())
   listing         Listing             @relation(fields: [listingId], references: [id], onDelete: Cascade)
   reporter        User                @relation(fields: [reporterId], references: [id], onDelete: Cascade)
@@ -117,15 +117,15 @@ model ListingReport {
 }
 
 model PortalSettings {
-  id                 String   @id @default(auto()) @map("_id") @db.ObjectId
+  id                 String   @id @default(cuid())
   key                String   @unique @default("portal")
   listingLifetimeDays Int     @default(90)
   updatedAt          DateTime @updatedAt
 }
 
 model AdminActivity {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  adminId   String   @db.ObjectId
+  id        String   @id @default(cuid())
+  adminId   String
   adminName String
   action    String
   targetType String
@@ -138,10 +138,10 @@ model AdminActivity {
 }
 
 model Message {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(cuid())
   content   String
-  senderId  String   @db.ObjectId
-  listingId String   @db.ObjectId
+  senderId  String
+  listingId String
   sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())

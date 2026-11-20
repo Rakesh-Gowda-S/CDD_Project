@@ -661,47 +661,6 @@ function AdminCatalogTools({ token, onNotice, onError }: AdminToolProps) {
   </section>
 }
 
-function AdminReportTools({ token, onNotice, onError }: AdminToolProps) {
-  const [reports, setReports] = useState<ListingReport[]>([])
-  const [loading, setLoading] = useState(true)
-
-  async function reload() {
-    setLoading(true)
-    try {
-      const result = await api.adminReports('PENDING', token)
-      setReports(result.reports)
-    } catch (cause) {
-      onError(cause instanceof Error ? cause.message : 'Could not load reports.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { void reload() }, [token])
-
-  async function review(report: ListingReport, action: 'DISMISS' | 'ARCHIVE' | 'RESOLVE') {
-    const prompt = action === 'ARCHIVE' ? 'Archive the reported listing?' : action === 'RESOLVE' ? 'Mark the reported listing as resolved?' : ''
-    if (prompt && !window.confirm(prompt)) return
-    try {
-      if (action === 'DISMISS') await api.dismissReport(report.id, token)
-      else await api.actionReport(report.id, action, token)
-      onError('')
-      onNotice(action === 'DISMISS' ? 'Report dismissed.' : `Listing ${action === 'ARCHIVE' ? 'archived' : 'resolved'} and report reviewed.`)
-      await reload()
-    } catch (cause) {
-      onError(cause instanceof Error ? cause.message : 'Could not review this report.')
-    }
-  }
-
-  return <section className="admin-approval-section">
-    <div className="admin-section-heading"><div><span className="section-kicker">COMMUNITY SAFETY</span><h2>Student reports</h2></div><span className="admin-pending-count">{reports.length} pending</span></div>
-    {loading ? <div className="inbox-empty">Loading reports...</div> : reports.length ? <div className="admin-tool-list">{reports.map((report) => <article className="admin-report" key={report.id}>
-      <div><div className="admin-listing-meta"><AlertTriangle size={15} /><b>{report.reason.replace(/_/g, ' ')}</b><time>{formatDate(report.createdAt)}</time></div><h3>{report.listing.title}</h3><p>{report.details || 'No additional details provided.'}</p><small>Reported by {report.reporter.name} · {report.listing.location}</small></div>
-      <div className="admin-tool-row-actions"><button className="text-button" onClick={() => void review(report, 'DISMISS')}>Dismiss</button><button className="button button-outline" onClick={() => void review(report, 'RESOLVE')}>Resolve listing</button><button className="admin-remove-button" onClick={() => void review(report, 'ARCHIVE')}>Archive listing</button></div>
-    </article>)}</div> : <div className="admin-approval-empty">There are no pending student reports.</div>}
-  </section>
-}
-
 function AdminBulkTools({ token, listings, onListingsChanged, onNotice, onError }: AdminToolProps & {
   listings: Listing[]
   onListingsChanged: () => Promise<void>
@@ -915,7 +874,7 @@ function AdminApp() {
   const [listings, setListings] = useState<Listing[]>([])
   const [registrationRequests, setRegistrationRequests] = useState<RegistrationRequest[]>([])
   const [activeOperation, setActiveOperation] = useState<
-    'registrations' | 'listings' | 'catalog' | 'reports' | 'bulk' | 'expiry' | 'accounts' | 'activity' | 'exports'
+    'registrations' | 'listings' | 'catalog' | 'bulk' | 'expiry' | 'accounts' | 'activity' | 'exports'
   >('listings')
   const [page, setPage] = useState(window.location.pathname)
   const [checking, setChecking] = useState(Boolean(token))
@@ -1083,9 +1042,6 @@ function AdminApp() {
         <button className={`admin-operation${activeOperation === 'catalog' ? ' admin-operation-active' : ''}`} type="button" aria-pressed={activeOperation === 'catalog'} onClick={() => setActiveOperation('catalog')}>
           <span className="admin-operation-icon"><MapPinned size={20} /></span><span className="admin-operation-copy"><b>Categories & locations</b><small>Manage listing choices</small></span>
         </button>
-        <button className={`admin-operation${activeOperation === 'reports' ? ' admin-operation-active' : ''}`} type="button" aria-pressed={activeOperation === 'reports'} onClick={() => setActiveOperation('reports')}>
-          <span className="admin-operation-icon"><AlertTriangle size={20} /></span><span className="admin-operation-copy"><b>Student reports</b><small>Review reported posts</small></span>
-        </button>
         <button className={`admin-operation${activeOperation === 'bulk' ? ' admin-operation-active' : ''}`} type="button" aria-pressed={activeOperation === 'bulk'} onClick={() => setActiveOperation('bulk')}>
           <span className="admin-operation-icon"><ListChecks size={20} /></span><span className="admin-operation-copy"><b>Bulk moderation</b><small>Archive or remove multiple</small></span>
         </button>
@@ -1116,12 +1072,11 @@ function AdminApp() {
           <div className="admin-listing-body"><div className="admin-listing-meta"><span className={`status-pill status-${listing.status.toLowerCase()}`}>{listing.status}</span><span>{listing.isResolved ? 'Resolved' : 'Open'}</span></div><h2>{listing.title}</h2><p>{listing.description}</p><div className="admin-listing-details"><span>{listing.location}</span><span>Posted by {listing.owner.name}</span><time>{formatDate(listing.createdAt)}</time></div><div className="admin-listing-actions"><button className="button button-outline" disabled={listing.isResolved} onClick={() => void markResolved(listing)}>{listing.isResolved ? 'Resolved' : 'Mark resolved'}</button><button className="admin-remove-button" onClick={() => void removeListing(listing)}>Remove listing</button></div></div>
         </article>)}</div> : <div className="inbox-empty"><b>No listings to review</b><span>New campus posts will appear here.</span></div>}
       </section> : activeOperation === 'catalog' ? <AdminCatalogTools token={token} onNotice={setNotice} onError={setError} />
-        : activeOperation === 'reports' ? <AdminReportTools token={token} onNotice={setNotice} onError={setError} />
-          : activeOperation === 'bulk' ? <AdminBulkTools token={token} listings={listings} onListingsChanged={reloadAdminListings} onNotice={setNotice} onError={setError} />
-            : activeOperation === 'expiry' ? <AdminExpiryTools token={token} onNotice={setNotice} onError={setError} />
-              : activeOperation === 'accounts' ? <AdminAccountTools token={token} onNotice={setNotice} onError={setError} />
-                : activeOperation === 'activity' ? <AdminActivityTools token={token} onNotice={setNotice} onError={setError} />
-                  : <AdminExportTools token={token} onNotice={setNotice} onError={setError} />}
+        : activeOperation === 'bulk' ? <AdminBulkTools token={token} listings={listings} onListingsChanged={reloadAdminListings} onNotice={setNotice} onError={setError} />
+          : activeOperation === 'expiry' ? <AdminExpiryTools token={token} onNotice={setNotice} onError={setError} />
+            : activeOperation === 'accounts' ? <AdminAccountTools token={token} onNotice={setNotice} onError={setError} />
+              : activeOperation === 'activity' ? <AdminActivityTools token={token} onNotice={setNotice} onError={setError} />
+                : <AdminExportTools token={token} onNotice={setNotice} onError={setError} />}
     </section>
   </main>
 }
